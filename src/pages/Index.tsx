@@ -5,6 +5,7 @@ import DeviceVisualization from '@/components/DeviceVisualization';
 import CameraFeed from '@/components/CameraFeed';
 import ControlPanel from '@/components/ControlPanel';
 import InspectionResults from '@/components/InspectionResults';
+import StatisticsPanel from '@/components/StatisticsPanel';
 import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
@@ -13,6 +14,9 @@ const Index = () => {
   const [autoMode, setAutoMode] = useState(false);
   const [inspectedCount, setInspectedCount] = useState(0);
   const [rejectedCount, setRejectedCount] = useState(0);
+  const [labelDefectsCount, setLabelDefectsCount] = useState(0);
+  const [dentDefectsCount, setDentDefectsCount] = useState(0);
+  const [capDefectsCount, setCapDefectsCount] = useState(0);
   
   const handleStatusChange = (newStatus: 'error' | 'success' | 'warning' | 'idle') => {
     setStatus(newStatus);
@@ -32,6 +36,15 @@ const Index = () => {
       setStatus('error');
       setInspectedCount(prev => prev + 1);
       setRejectedCount(prev => prev + 1);
+      
+      // Update defect counters based on type
+      if (type === 'label') {
+        setLabelDefectsCount(prev => prev + 1);
+      } else if (type === 'dent') {
+        setDentDefectsCount(prev => prev + 1);
+      } else if (type === 'cap') {
+        setCapDefectsCount(prev => prev + 1);
+      }
       
       // Show toast notification for rejected product
       toast({
@@ -97,6 +110,16 @@ const Index = () => {
                   </div>
                 </div>
               </div>
+            </div>
+            
+            <div className="mt-6">
+              <StatisticsPanel 
+                inspectedCount={inspectedCount}
+                rejectedCount={rejectedCount}
+                labelDefectsCount={labelDefectsCount}
+                dentDefectsCount={dentDefectsCount}
+                capDefectsCount={capDefectsCount}
+              />
             </div>
           </div>
           

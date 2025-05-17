@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -8,6 +7,13 @@ interface CameraFeedProps {
   detectionType?: 'none' | 'label' | 'dent' | 'cap';
 }
 
+interface Bottle {
+  id: number;
+  hasIssue: boolean;
+  type: 'none' | 'label' | 'dent' | 'cap';
+  position: number;
+}
+
 const CameraFeed: React.FC<CameraFeedProps> = ({ 
   className, 
   simulateDetection = false,
@@ -15,7 +21,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
 }) => {
   const [time, setTime] = useState(new Date());
   const [bottlePosition, setBottlePosition] = useState(-1);
-  const [bottles, setBottles] = useState<Array<{id: number, hasIssue: boolean, type: 'none' | 'label' | 'dent' | 'cap'}>>([]);
+  const [bottles, setBottles] = useState<Bottle[]>([]);
   const [bottleCount, setBottleCount] = useState(0);
   
   // Update time every second
