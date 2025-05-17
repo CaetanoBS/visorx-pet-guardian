@@ -39,7 +39,7 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({
           'rounded-full shadow-glow',
           statusClasses[status],
           sizeClasses[size],
-          blinking && 'animate-blink',
+          blinking && 'animate-pulse duration-500',
           className
         )}
       />

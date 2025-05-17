@@ -22,9 +22,9 @@ const DeviceVisualization: React.FC<DeviceVisualizationProps> = ({ status, class
       <div className="device-screen aspect-video mb-2">
         <div className="absolute inset-0 grid-pattern"></div>
         <div className="absolute top-2 left-2">
-          <div className="terminal-text">VisorX > Sistema Iniciado</div>
-          <div className="terminal-text">VisorX > Câmera: OK</div>
-          <div className="terminal-text">VisorX > Modo de Inspeção: ATIVO</div>
+          <div className="terminal-text">VisorX {`>`} Sistema Iniciado</div>
+          <div className="terminal-text">VisorX {`>`} Câmera: OK</div>
+          <div className="terminal-text">VisorX {`>`} Modo de Inspeção: ATIVO</div>
         </div>
       </div>
       
