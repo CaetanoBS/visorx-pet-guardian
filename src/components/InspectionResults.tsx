@@ -1,0 +1,89 @@
+
+import React from 'react';
+import { cn } from '@/lib/utils';
+import StatusIndicator from './StatusIndicator';
+
+interface InspectionResultsProps {
+  className?: string;
+  status: 'error' | 'success' | 'warning' | 'idle';
+  detectionType?: 'none' | 'label' | 'dent' | 'cap';
+}
+
+const InspectionResults: React.FC<InspectionResultsProps> = ({ 
+  className,
+  status,
+  detectionType = 'none'
+}) => {
+  return (
+    <div className={cn("bg-industrial-dark rounded-lg p-4 text-white", className)}>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-bold">Resultado da Inspeção</h3>
+        <StatusIndicator 
+          status={status}
+          size="lg"
+          blinking={status === 'error'}
+        />
+      </div>
+      
+      <div className="space-y-3">
+        <div className="flex justify-between items-center border-b border-industrial-medium pb-2">
+          <div className="text-sm">Condição da Garrafa</div>
+          <div className="font-mono text-sm">
+            {status === 'error' ? (
+              <span className="text-status-error">FALHA</span>
+            ) : (
+              <span className="text-status-success">OK</span>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center border-b border-industrial-medium pb-2">
+          <div className="text-sm">Rótulo</div>
+          <div className="font-mono text-sm">
+            {detectionType === 'label' ? (
+              <span className="text-status-error">TORTO</span>
+            ) : (
+              <span className="text-status-success">OK</span>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center border-b border-industrial-medium pb-2">
+          <div className="text-sm">Estrutura</div>
+          <div className="font-mono text-sm">
+            {detectionType === 'dent' ? (
+              <span className="text-status-error">AMASSADO</span>
+            ) : (
+              <span className="text-status-success">OK</span>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center border-b border-industrial-medium pb-2">
+          <div className="text-sm">Tampa</div>
+          <div className="font-mono text-sm">
+            {detectionType === 'cap' ? (
+              <span className="text-status-error">MAL COLOCADA</span>
+            ) : (
+              <span className="text-status-success">OK</span>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      <div className="mt-4 bg-industrial-medium rounded p-2">
+        <div className="font-mono text-xs text-center">
+          {status === 'error' ? (
+            <>Ação: <span className="text-status-error">REJEITAR PRODUTO</span></>
+          ) : status === 'warning' ? (
+            <>Ação: <span className="text-status-warning">REVISÃO MANUAL</span></>
+          ) : (
+            <>Ação: <span className="text-status-success">APROVADO</span></>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default InspectionResults;
