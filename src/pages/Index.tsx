@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import DeviceVisualization from '@/components/DeviceVisualization';
@@ -28,10 +27,8 @@ const Index = () => {
     // Auto-set status based on detection type
     if (type === 'none') {
       setStatus('success');
-      // Only count if we're changing from an error state
-      if (status === 'error') {
-        setInspectedCount(prev => prev + 1);
-      }
+      // Count every inspection
+      setInspectedCount(prev => prev + 1);
     } else {
       setStatus('error');
       setInspectedCount(prev => prev + 1);
@@ -59,19 +56,23 @@ const Index = () => {
     }
   };
   
-  // Effect for automatic random defect simulation when auto mode is enabled
+  // New handler for the CameraFeed component detection events
+  const handleBottleDetection = (type: 'none' | 'label' | 'dent' | 'cap') => {
+    // Only process detections when in auto mode
+    if (autoMode) {
+      handleDetectionChange(type);
+    }
+  };
+  
+  // Effect for automatic random defect simulation (keeping for backward compatibility)
+  // We'll rely on the actual bottle simulation instead
   useEffect(() => {
     if (!autoMode) return;
     
-    const types: Array<'none' | 'label' | 'dent' | 'cap'> = ['none', 'label', 'dent', 'cap'];
+    // No need for interval simulation anymore since we're getting real detections
+    // from the CameraFeed component
     
-    const interval = setInterval(() => {
-      // 75% chance for no defect, 25% chance for a random defect
-      const randomIndex = Math.random() > 0.75 ? Math.floor(Math.random() * 3) + 1 : 0;
-      handleDetectionChange(types[randomIndex]);
-    }, 3000);
-    
-    return () => clearInterval(interval);
+    return () => {};
   }, [autoMode]);
 
   return (
@@ -101,6 +102,7 @@ const Index = () => {
                   className="w-full" 
                   simulateDetection={detectionType !== 'none'}
                   detectionType={detectionType}
+                  onDetect={handleBottleDetection}
                 />
                 <div className="mt-4 font-mono text-xs text-muted-foreground flex justify-between">
                   <div>Sistema VisorX monitorando linha de produção PET - Conectado ao sistema central</div>

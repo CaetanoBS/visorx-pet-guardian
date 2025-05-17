@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -5,6 +6,7 @@ interface CameraFeedProps {
   className?: string;
   simulateDetection?: boolean;
   detectionType?: 'none' | 'label' | 'dent' | 'cap';
+  onDetect?: (type: 'none' | 'label' | 'dent' | 'cap') => void;
 }
 
 interface Bottle {
@@ -17,12 +19,14 @@ interface Bottle {
 const CameraFeed: React.FC<CameraFeedProps> = ({ 
   className, 
   simulateDetection = false,
-  detectionType = 'none'
+  detectionType = 'none',
+  onDetect
 }) => {
   const [time, setTime] = useState(new Date());
   const [bottlePosition, setBottlePosition] = useState(-1);
   const [bottles, setBottles] = useState<Bottle[]>([]);
   const [bottleCount, setBottleCount] = useState(0);
+  const [lastDetectedBottleId, setLastDetectedBottleId] = useState<number | null>(null);
   
   // Update time every second
   useEffect(() => {
@@ -79,15 +83,21 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
   // Effect to handle detection and trigger parent component
   useEffect(() => {
     const centerBottle = bottles.find(b => b.position === 3);
-    if (centerBottle && centerBottle.hasIssue) {
-      // When a bottle with an issue is at the center position, trigger detection
-      if (detectionType !== centerBottle.type) {
-        // This is how we would normally notify the parent component
-        // For now, we're just console logging it
-        console.log(`Bottle issue detected: ${centerBottle.type}`);
+    
+    if (centerBottle && centerBottle.id !== lastDetectedBottleId) {
+      // When a bottle reaches the center position, notify parent component
+      if (onDetect) {
+        setLastDetectedBottleId(centerBottle.id);
+        // Pass the bottle's issue type (or 'none' if no issue)
+        onDetect(centerBottle.hasIssue ? centerBottle.type : 'none');
+        
+        // Log for debugging
+        if (centerBottle.hasIssue) {
+          console.log(`Bottle issue detected: ${centerBottle.type}`);
+        }
       }
     }
-  }, [bottles, detectionType]);
+  }, [bottles, onDetect, lastDetectedBottleId]);
 
   const formatTime = () => {
     return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
