@@ -5,7 +5,8 @@ import CameraFeed from '@/components/CameraFeed';
 import ControlPanel from '@/components/ControlPanel';
 import InspectionResults from '@/components/InspectionResults';
 import StatisticsPanel from '@/components/StatisticsPanel';
-import { toast } from "@/components/ui/use-toast";
+import AIAnalysisReport from '@/components/AIAnalysisReport';
+import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [status, setStatus] = useState<'error' | 'success' | 'warning' | 'idle'>('success');
@@ -16,6 +17,10 @@ const Index = () => {
   const [labelDefectsCount, setLabelDefectsCount] = useState(0);
   const [dentDefectsCount, setDentDefectsCount] = useState(0);
   const [capDefectsCount, setCapDefectsCount] = useState(0);
+  
+  // Track patterns by bottle position
+  const [defectPatterns, setDefectPatterns] = useState<Record<number, Record<string, number>>>({});
+  const [bottlePositionCounter, setBottlePositionCounter] = useState(0);
   
   const handleStatusChange = (newStatus: 'error' | 'success' | 'warning' | 'idle') => {
     setStatus(newStatus);
@@ -56,11 +61,40 @@ const Index = () => {
     }
   };
   
+  // Track bottle position and defect patterns
+  const recordBottlePosition = (type: 'none' | 'label' | 'dent' | 'cap') => {
+    // Increment the position counter for each bottle
+    const currentPosition = bottlePositionCounter % 30; // Simulate 30 positions in the production line
+    setBottlePositionCounter(prev => prev + 1);
+    
+    // Only record patterns for defects
+    if (type !== 'none') {
+      setDefectPatterns(prev => {
+        const updated = {...prev};
+        if (!updated[currentPosition]) {
+          updated[currentPosition] = { label: 0, dent: 0, cap: 0 };
+        }
+        updated[currentPosition][type] = (updated[currentPosition][type] || 0) + 1;
+        return updated;
+      });
+      
+      // If we have a high concentration of defects in a particular position, highlight it
+      if (defectPatterns[currentPosition]?.[type] >= 3) {
+        toast({
+          title: "Padrão Detectado",
+          description: `Múltiplos defeitos detectados na posição ${currentPosition}. Possível problema no equipamento.`,
+          variant: "warning"
+        });
+      }
+    }
+  };
+  
   // New handler for the CameraFeed component detection events
   const handleBottleDetection = (type: 'none' | 'label' | 'dent' | 'cap') => {
     // Only process detections when in auto mode
     if (autoMode) {
       handleDetectionChange(type);
+      recordBottlePosition(type);
     }
   };
   
@@ -121,6 +155,13 @@ const Index = () => {
                 labelDefectsCount={labelDefectsCount}
                 dentDefectsCount={dentDefectsCount}
                 capDefectsCount={capDefectsCount}
+              />
+            </div>
+            
+            <div className="mt-6">
+              <AIAnalysisReport 
+                defectPatterns={defectPatterns}
+                totalBottles={inspectedCount}
               />
             </div>
           </div>
