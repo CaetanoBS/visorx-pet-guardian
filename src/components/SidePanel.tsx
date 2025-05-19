@@ -27,13 +27,13 @@ const ProductionMetrics = () => {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-industrial-dark text-white p-3 rounded-md">
           <div className="text-xs text-industrial-silver">Produção Por Hora</div>
-          <div className="text-2xl font-bold">12.000</div>
-          <div className="text-xs text-blue-300 mt-1">Velocidade Máxima</div>
+          <div className="text-2xl font-bold">5.928</div>
+          <div className="text-xs text-blue-300 mt-1">Velocidade Padrão</div>
         </div>
         <div className="bg-industrial-dark text-white p-3 rounded-md">
           <div className="text-xs text-industrial-silver">Produção Por Minuto</div>
-          <div className="text-2xl font-bold">200</div>
-          <div className="text-xs text-blue-300 mt-1">3,33 por segundo</div>
+          <div className="text-2xl font-bold">98,8</div>
+          <div className="text-xs text-blue-300 mt-1">1,65 por segundo</div>
         </div>
       </div>
       <div className="mt-3 bg-slate-100 p-2 rounded-md text-xs">
@@ -44,7 +44,7 @@ const ProductionMetrics = () => {
         <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
           <div className="bg-blue-500 h-full" style={{ width: '100%' }}></div>
         </div>
-        <div className="text-slate-500 mt-1">Executando com velocidade máxima</div>
+        <div className="text-slate-500 mt-1">Executando com velocidade normal</div>
       </div>
     </div>
   );

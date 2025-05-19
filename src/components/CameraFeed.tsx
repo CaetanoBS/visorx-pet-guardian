@@ -28,11 +28,11 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
   const [bottles, setBottles] = useState<Bottle[]>([]);
   const [bottleCount, setBottleCount] = useState(0);
   const [lastDetectedBottleId, setLastDetectedBottleId] = useState<number | null>(null);
-  // Increased production rate significantly
+  // Adjusted production rate to 5928 units per hour
   const [productionRate, setProductionRate] = useState({ 
-    perHour: 12000, 
-    perMinute: 200, 
-    perSecond: 3.33 
+    perHour: 5928, 
+    perMinute: 98.8, 
+    perSecond: 1.65
   });
   const detectionIntervalRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -47,7 +47,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Move bottles based on real-time animation - with increased speed
+  // Move bottles based on real-time animation with adjusted speed
   useEffect(() => {
     const updateBottles = (timestamp: number) => {
       const elapsed = timestamp - lastUpdateTimeRef.current;
@@ -55,8 +55,8 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
       if (elapsed > 16) { // Update at ~60fps for smoother animation
         lastUpdateTimeRef.current = timestamp;
         
-        // Increased movement speed by adjusting movementPerSecond
-        const movementPerSecond = 5; // Much faster traversal
+        // Adjusted movement speed for better visibility
+        const movementPerSecond = 1.5; // Slower traversal compared to previous setting
         const movementThisFrame = (movementPerSecond * elapsed) / 1000;
         
         setBottles(prev => {
@@ -66,12 +66,12 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
             position: bottle.position + movementThisFrame
           })).filter(bottle => bottle.position < 6); // Remove bottles that exit view
           
-          // Randomly add new bottles based on increased production rate
+          // Randomly add new bottles based on adjusted production rate
           const bottlesPerMs = productionRate.perSecond / 1000;
-          const shouldAddBottle = Math.random() < (bottlesPerMs * elapsed * 1.5); // Higher probability for more bottles
+          const shouldAddBottle = Math.random() < (bottlesPerMs * elapsed);
           
           if (shouldAddBottle) {
-            // Decide if bottle has issues (15% chance - slightly reduced to make it more realistic)
+            // Decide if bottle has issues (15% chance)
             const hasIssue = Math.random() < 0.15;
             const defectTypes: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[] = [];
             
