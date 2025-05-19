@@ -5,15 +5,16 @@ import { cn } from '@/lib/utils';
 interface CameraFeedProps {
   className?: string;
   simulateDetection?: boolean;
-  detectionType?: 'none' | 'label' | 'dent' | 'cap';
-  onDetect?: (type: 'none' | 'label' | 'dent' | 'cap') => void;
+  detectionType?: 'none' | 'label' | 'dent' | 'cap' | 'liquid';
+  onDetect?: (types: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[]) => void;
 }
 
 interface Bottle {
   id: number;
   hasIssue: boolean;
-  type: 'none' | 'label' | 'dent' | 'cap';
+  types: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[];
   position: number;
+  fillLevel?: number; // 0-100 percentage of fill
 }
 
 const CameraFeed: React.FC<CameraFeedProps> = ({ 
@@ -49,25 +50,49 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
         
         // Randomly add a new bottle at the start
         if (Math.random() > 0.3) { // 70% chance to add a new bottle
-          let newIssueType: 'none' | 'label' | 'dent' | 'cap' = 'none';
-          const hasIssue = Math.random() < 0.2; // 20% chance for a bottle to have an issue
+          const defectTypes: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[] = [];
+          const hasIssue = Math.random() < 0.25; // 25% chance for a bottle to have an issue
           
           if (hasIssue) {
+            // Decide how many defects (1 or 2)
+            const defectCount = Math.random() < 0.3 ? 2 : 1; // 30% chance for multiple defects
+            
+            // First defect
             const issueRandom = Math.random();
-            if (issueRandom < 0.33) {
-              newIssueType = 'label';
-            } else if (issueRandom < 0.66) {
-              newIssueType = 'dent';
+            if (issueRandom < 0.25) {
+              defectTypes.push('label');
+            } else if (issueRandom < 0.5) {
+              defectTypes.push('dent');
+            } else if (issueRandom < 0.75) {
+              defectTypes.push('cap');
             } else {
-              newIssueType = 'cap';
+              defectTypes.push('liquid');
             }
+            
+            // Add a second defect if needed, ensuring it's different from the first
+            if (defectCount > 1) {
+              const availableDefects = ['label', 'dent', 'cap', 'liquid'].filter(
+                d => d !== defectTypes[0]
+              ) as ('label' | 'dent' | 'cap' | 'liquid')[];
+              
+              const secondDefect = availableDefects[Math.floor(Math.random() * availableDefects.length)];
+              defectTypes.push(secondDefect);
+            }
+          } else {
+            defectTypes.push('none');
           }
+          
+          // Create fill level (75-100% for normal, 40-85% for liquid issues)
+          const fillLevel = defectTypes.includes('liquid') 
+            ? Math.floor(Math.random() * 45) + 40 
+            : Math.floor(Math.random() * 15) + 85;
           
           updated.push({
             id: bottleCount,
             position: 0,
-            hasIssue,
-            type: newIssueType
+            hasIssue: hasIssue,
+            types: defectTypes,
+            fillLevel
           });
           
           setBottleCount(prev => prev + 1);
@@ -88,12 +113,12 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
       // When a bottle reaches the center position, notify parent component
       if (onDetect) {
         setLastDetectedBottleId(centerBottle.id);
-        // Pass the bottle's issue type (or 'none' if no issue)
-        onDetect(centerBottle.hasIssue ? centerBottle.type : 'none');
+        // Pass the bottle's issue types (or ['none'] if no issue)
+        onDetect(centerBottle.hasIssue ? centerBottle.types : ['none']);
         
         // Log for debugging
         if (centerBottle.hasIssue) {
-          console.log(`Bottle issue detected: ${centerBottle.type}`);
+          console.log(`Bottle issue detected: ${centerBottle.types.join(', ')}`);
         }
       }
     }
@@ -139,30 +164,40 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
                     {/* Bottle cap */}
                     <div className={cn(
                       "absolute -top-3 left-1/2 -translate-x-1/2 w-6 h-3 rounded-t-md",
-                      bottle.type === 'cap' ? 'bg-red-500' : 'bg-blue-500'
+                      bottle.types.includes('cap') ? 'bg-red-500' : 'bg-blue-500'
                     )}></div>
                     
                     {/* Label */}
                     <div className={cn(
                       "absolute top-1/3 left-0 w-full h-8 bg-white/70",
-                      bottle.type === 'label' && 'transform -rotate-12 bg-yellow-200/70'
+                      bottle.types.includes('label') && 'transform -rotate-12 bg-yellow-200/70'
                     )}></div>
                     
                     {/* Dent */}
-                    {bottle.type === 'dent' && (
+                    {bottle.types.includes('dent') && (
                       <div className="absolute top-1/2 right-0 w-3 h-6 bg-gray-900 rounded-full"></div>
                     )}
+                    
+                    {/* Liquid fill level */}
+                    <div 
+                      className={cn(
+                        "absolute bottom-0 left-0 w-full bg-blue-500/50 transition-all duration-300",
+                        bottle.types.includes('liquid') ? 'bg-red-500/50' : 'bg-blue-500/50'
+                      )}
+                      style={{ height: `${bottle.fillLevel || 80}%` }}
+                    ></div>
                   </div>
                 </div>
                 
                 {/* Detection highlight */}
                 {bottle.position === 3 && bottle.hasIssue && (
                   <div className="absolute inset-0 border-2 border-red-500 animate-pulse-slow flex items-center justify-center z-10">
-                    <span className="bg-red-500 text-white text-xs px-1">
-                      {bottle.type === 'label' && "RÓTULO"}
-                      {bottle.type === 'dent' && "AMASSADO"}
-                      {bottle.type === 'cap' && "TAMPA"}
-                    </span>
+                    <div className="bg-red-500 text-white text-[7px] px-1 flex flex-col items-center">
+                      {bottle.types.includes('label') && <span>RÓTULO</span>}
+                      {bottle.types.includes('dent') && <span>AMASSADO</span>}
+                      {bottle.types.includes('cap') && <span>TAMPA</span>}
+                      {bottle.types.includes('liquid') && <span>NÍVEL</span>}
+                    </div>
                   </div>
                 )}
               </div>

@@ -17,6 +17,7 @@ interface StatisticsPanelProps {
   labelDefectsCount: number;
   dentDefectsCount: number;
   capDefectsCount: number;
+  liquidDefectsCount: number;
 }
 
 const StatisticsPanel: React.FC<StatisticsPanelProps> = ({ 
@@ -25,9 +26,10 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
   rejectedCount,
   labelDefectsCount,
   dentDefectsCount,
-  capDefectsCount
+  capDefectsCount,
+  liquidDefectsCount
 }) => {
-  const defectsTotal = labelDefectsCount + dentDefectsCount + capDefectsCount;
+  const defectsTotal = labelDefectsCount + dentDefectsCount + capDefectsCount + liquidDefectsCount;
   const approvalRate = inspectedCount > 0 
     ? ((inspectedCount - rejectedCount) / inspectedCount * 100).toFixed(1) 
     : "0.0";
@@ -83,6 +85,13 @@ const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
             <TableCell className="text-right">{capDefectsCount}</TableCell>
             <TableCell className="text-right">
               {defectsTotal > 0 ? ((capDefectsCount / defectsTotal) * 100).toFixed(1) : "0.0"}%
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>Nível de Líquido Irregular</TableCell>
+            <TableCell className="text-right">{liquidDefectsCount}</TableCell>
+            <TableCell className="text-right">
+              {defectsTotal > 0 ? ((liquidDefectsCount / defectsTotal) * 100).toFixed(1) : "0.0"}%
             </TableCell>
           </TableRow>
         </TableBody>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import DeviceVisualization from '@/components/DeviceVisualization';
@@ -10,13 +11,15 @@ import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [status, setStatus] = useState<'error' | 'success' | 'warning' | 'idle'>('success');
-  const [detectionType, setDetectionType] = useState<'none' | 'label' | 'dent' | 'cap'>('none');
+  const [detectionType, setDetectionType] = useState<'none' | 'label' | 'dent' | 'cap' | 'liquid'>('none');
+  const [detectionTypes, setDetectionTypes] = useState<('none' | 'label' | 'dent' | 'cap' | 'liquid')[]>(['none']);
   const [autoMode, setAutoMode] = useState(false);
   const [inspectedCount, setInspectedCount] = useState(0);
   const [rejectedCount, setRejectedCount] = useState(0);
   const [labelDefectsCount, setLabelDefectsCount] = useState(0);
   const [dentDefectsCount, setDentDefectsCount] = useState(0);
   const [capDefectsCount, setCapDefectsCount] = useState(0);
+  const [liquidDefectsCount, setLiquidDefectsCount] = useState(0);
   
   // Track patterns by bottle position
   const [defectPatterns, setDefectPatterns] = useState<Record<number, Record<string, number>>>({});
@@ -26,8 +29,9 @@ const Index = () => {
     setStatus(newStatus);
   };
   
-  const handleDetectionChange = (type: 'none' | 'label' | 'dent' | 'cap') => {
+  const handleDetectionChange = (type: 'none' | 'label' | 'dent' | 'cap' | 'liquid') => {
     setDetectionType(type);
+    setDetectionTypes(type === 'none' ? ['none'] : [type]);
     
     // Auto-set status based on detection type
     if (type === 'none') {
@@ -46,6 +50,8 @@ const Index = () => {
         setDentDefectsCount(prev => prev + 1);
       } else if (type === 'cap') {
         setCapDefectsCount(prev => prev + 1);
+      } else if (type === 'liquid') {
+        setLiquidDefectsCount(prev => prev + 1);
       }
       
       // Show toast notification for rejected product
@@ -54,7 +60,8 @@ const Index = () => {
         description: `Defeito detectado: ${
           type === 'label' ? 'Rótulo torto' : 
           type === 'dent' ? 'Garrafa amassada' : 
-          'Tampa mal colocada'
+          type === 'cap' ? 'Tampa mal colocada' :
+          'Nível de líquido irregular'
         }`,
         variant: "destructive"
       });
@@ -62,52 +69,100 @@ const Index = () => {
   };
   
   // Track bottle position and defect patterns
-  const recordBottlePosition = (type: 'none' | 'label' | 'dent' | 'cap') => {
+  const recordBottlePosition = (types: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[]) => {
     // Increment the position counter for each bottle
     const currentPosition = bottlePositionCounter % 30; // Simulate 30 positions in the production line
     setBottlePositionCounter(prev => prev + 1);
     
-    // Only record patterns for defects
-    if (type !== 'none') {
-      setDefectPatterns(prev => {
-        const updated = {...prev};
-        if (!updated[currentPosition]) {
-          updated[currentPosition] = { label: 0, dent: 0, cap: 0 };
+    // Skip recording for bottles with no defects
+    if (types.includes('none')) return;
+    
+    // Record each defect type separately
+    setDefectPatterns(prev => {
+      const updated = {...prev};
+      
+      if (!updated[currentPosition]) {
+        updated[currentPosition] = { label: 0, dent: 0, cap: 0, liquid: 0 };
+      }
+      
+      // Record each defect type for this bottle
+      types.forEach(type => {
+        if (type !== 'none') {
+          updated[currentPosition][type] = (updated[currentPosition][type] || 0) + 1;
         }
-        updated[currentPosition][type] = (updated[currentPosition][type] || 0) + 1;
-        return updated;
       });
       
-      // If we have a high concentration of defects in a particular position, highlight it
-      if (defectPatterns[currentPosition]?.[type] >= 3) {
+      return updated;
+    });
+    
+    // Check for pattern thresholds and show toast notifications
+    types.forEach(type => {
+      if (type !== 'none' && defectPatterns[currentPosition]?.[type] >= 3) {
         toast({
           title: "Padrão Detectado",
-          description: `Múltiplos defeitos detectados na posição ${currentPosition}. Possível problema no equipamento.`,
-          variant: "warning"
+          description: `Múltiplos defeitos de ${
+            type === 'label' ? 'rótulo' : 
+            type === 'dent' ? 'amassamento' : 
+            type === 'cap' ? 'tampa' :
+            'nível de líquido'
+          } detectados na posição ${currentPosition}. Possível problema no equipamento.`,
+          variant: "default" // Changed from "warning" to "default" to fix the error
         });
       }
-    }
+    });
   };
   
   // New handler for the CameraFeed component detection events
-  const handleBottleDetection = (type: 'none' | 'label' | 'dent' | 'cap') => {
+  const handleBottleDetection = (types: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[]) => {
     // Only process detections when in auto mode
     if (autoMode) {
-      handleDetectionChange(type);
-      recordBottlePosition(type);
+      setDetectionTypes(types);
+      
+      // Set status based on detection types
+      if (types.includes('none')) {
+        setStatus('success');
+      } else {
+        setStatus('error');
+      }
+      
+      // Count inspections and rejections
+      setInspectedCount(prev => prev + 1);
+      
+      if (!types.includes('none')) {
+        setRejectedCount(prev => prev + 1);
+        
+        // Update defect counters for each type
+        types.forEach(type => {
+          if (type === 'label') {
+            setLabelDefectsCount(prev => prev + 1);
+          } else if (type === 'dent') {
+            setDentDefectsCount(prev => prev + 1);
+          } else if (type === 'cap') {
+            setCapDefectsCount(prev => prev + 1);
+          } else if (type === 'liquid') {
+            setLiquidDefectsCount(prev => prev + 1);
+          }
+        });
+        
+        // Show toast for the rejection
+        const defectDescriptions = types.map(type => 
+          type === 'label' ? 'Rótulo torto' : 
+          type === 'dent' ? 'Garrafa amassada' : 
+          type === 'cap' ? 'Tampa mal colocada' :
+          'Nível de líquido irregular'
+        ).join(', ');
+        
+        toast({
+          title: "Produto Rejeitado",
+          description: `Defeitos detectados: ${defectDescriptions}`,
+          variant: "destructive"
+        });
+      }
+      
+      // Record patterns
+      recordBottlePosition(types);
     }
   };
-  
-  // Effect for automatic random defect simulation (keeping for backward compatibility)
-  // We'll rely on the actual bottle simulation instead
-  useEffect(() => {
-    if (!autoMode) return;
-    
-    // No need for interval simulation anymore since we're getting real detections
-    // from the CameraFeed component
-    
-    return () => {};
-  }, [autoMode]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -155,6 +210,7 @@ const Index = () => {
                 labelDefectsCount={labelDefectsCount}
                 dentDefectsCount={dentDefectsCount}
                 capDefectsCount={capDefectsCount}
+                liquidDefectsCount={liquidDefectsCount}
               />
             </div>
             
@@ -170,7 +226,7 @@ const Index = () => {
             <DeviceVisualization status={status} />
             <InspectionResults 
               status={status}
-              detectionType={detectionType}
+              detectionTypes={detectionTypes}
             />
           </div>
           

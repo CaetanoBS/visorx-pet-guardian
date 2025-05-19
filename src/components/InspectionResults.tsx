@@ -6,14 +6,19 @@ import StatusIndicator from './StatusIndicator';
 interface InspectionResultsProps {
   className?: string;
   status: 'error' | 'success' | 'warning' | 'idle';
-  detectionType?: 'none' | 'label' | 'dent' | 'cap';
+  detectionType?: 'none' | 'label' | 'dent' | 'cap' | 'liquid';
+  detectionTypes?: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[];
 }
 
 const InspectionResults: React.FC<InspectionResultsProps> = ({ 
   className,
   status,
-  detectionType = 'none'
+  detectionType = 'none',
+  detectionTypes = []
 }) => {
+  // If multiple types are provided, use them, otherwise use the single detectionType
+  const types = detectionTypes.length > 0 ? detectionTypes : [detectionType];
+  
   return (
     <div className={cn("bg-industrial-dark rounded-lg p-4 text-white", className)}>
       <div className="flex justify-between items-center mb-4">
@@ -40,7 +45,7 @@ const InspectionResults: React.FC<InspectionResultsProps> = ({
         <div className="flex justify-between items-center border-b border-industrial-medium pb-2">
           <div className="text-sm">Rótulo</div>
           <div className="font-mono text-sm">
-            {detectionType === 'label' ? (
+            {types.includes('label') ? (
               <span className="text-status-error">TORTO</span>
             ) : (
               <span className="text-status-success">OK</span>
@@ -51,7 +56,7 @@ const InspectionResults: React.FC<InspectionResultsProps> = ({
         <div className="flex justify-between items-center border-b border-industrial-medium pb-2">
           <div className="text-sm">Estrutura</div>
           <div className="font-mono text-sm">
-            {detectionType === 'dent' ? (
+            {types.includes('dent') ? (
               <span className="text-status-error">AMASSADO</span>
             ) : (
               <span className="text-status-success">OK</span>
@@ -62,8 +67,19 @@ const InspectionResults: React.FC<InspectionResultsProps> = ({
         <div className="flex justify-between items-center border-b border-industrial-medium pb-2">
           <div className="text-sm">Tampa</div>
           <div className="font-mono text-sm">
-            {detectionType === 'cap' ? (
+            {types.includes('cap') ? (
               <span className="text-status-error">MAL COLOCADA</span>
+            ) : (
+              <span className="text-status-success">OK</span>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex justify-between items-center border-b border-industrial-medium pb-2">
+          <div className="text-sm">Nível do Líquido</div>
+          <div className="font-mono text-sm">
+            {types.includes('liquid') ? (
+              <span className="text-status-error">IRREGULAR</span>
             ) : (
               <span className="text-status-success">OK</span>
             )}

@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 interface ControlPanelProps {
   className?: string;
   onStatusChange: (status: 'error' | 'success' | 'warning' | 'idle') => void;
-  onDetectionChange: (type: 'none' | 'label' | 'dent' | 'cap') => void;
+  onDetectionChange: (type: 'none' | 'label' | 'dent' | 'cap' | 'liquid') => void;
   currentStatus: 'error' | 'success' | 'warning' | 'idle';
-  currentDetection: 'none' | 'label' | 'dent' | 'cap';
+  currentDetection: 'none' | 'label' | 'dent' | 'cap' | 'liquid';
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({ 
@@ -88,7 +88,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
         </TabsContent>
         
         <TabsContent value="simulation" className="mt-4 space-y-4">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             <Button 
               variant={currentDetection === 'none' ? 'default' : 'outline'} 
               onClick={() => onDetectionChange('none')}
@@ -113,6 +113,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
             >
               Tampa Incorreta
             </Button>
+            <Button 
+              variant={currentDetection === 'liquid' ? 'default' : 'outline'} 
+              onClick={() => onDetectionChange('liquid')}
+            >
+              Nível Irregular
+            </Button>
           </div>
           
           <div className="pt-2">
@@ -122,6 +128,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
               {currentDetection === 'label' && "Rótulo mal aplicado - Rejeitar produto"}
               {currentDetection === 'dent' && "Deformação na garrafa - Rejeitar produto"}
               {currentDetection === 'cap' && "Tampa mal selada - Rejeitar produto"}
+              {currentDetection === 'liquid' && "Nível de líquido irregular - Rejeitar produto"}
             </div>
           </div>
         </TabsContent>
