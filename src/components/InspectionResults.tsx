@@ -19,20 +19,10 @@ const InspectionResults: React.FC<InspectionResultsProps> = ({
   // If multiple types are provided, use them, otherwise use the single detectionType
   const types = detectionTypes.length > 0 ? detectionTypes : [detectionType];
   
-  // Calculate badge count for multiple defects
-  const defectCount = types.filter(t => t !== 'none').length;
-  
   return (
     <div className={cn("bg-industrial-dark rounded-lg p-4 text-white", className)}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold flex items-center">
-          Resultado da Inspeção
-          {defectCount > 0 && (
-            <span className="ml-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {defectCount}
-            </span>
-          )}
-        </h3>
+        <h3 className="font-bold">Resultado da Inspeção</h3>
         <StatusIndicator 
           status={status}
           size="lg"
@@ -87,17 +77,11 @@ const InspectionResults: React.FC<InspectionResultsProps> = ({
         
         <div className="flex justify-between items-center border-b border-industrial-medium pb-2">
           <div className="text-sm">Nível do Líquido</div>
-          <div className="font-mono text-sm flex items-center">
+          <div className="font-mono text-sm">
             {types.includes('liquid') ? (
-              <>
-                <span className="text-status-error mr-1">IRREGULAR</span>
-                <span className="text-xs text-status-error">{Math.round(40 + Math.random() * 20)}%</span>
-              </>
+              <span className="text-status-error">IRREGULAR</span>
             ) : (
-              <>
-                <span className="text-status-success mr-1">OK</span>
-                <span className="text-xs text-status-success">{Math.round(85 + Math.random() * 15)}%</span>
-              </>
+              <span className="text-status-success">OK</span>
             )}
           </div>
         </div>
