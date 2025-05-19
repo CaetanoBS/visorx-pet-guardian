@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CameraFeedProps {
@@ -28,6 +28,10 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
   const [bottles, setBottles] = useState<Bottle[]>([]);
   const [bottleCount, setBottleCount] = useState(0);
   const [lastDetectedBottleId, setLastDetectedBottleId] = useState<number | null>(null);
+  const [productionRate, setProductionRate] = useState({ perHour: 5928, perMinute: 98.8, perSecond: 1.65 });
+  const detectionIntervalRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const lastUpdateTimeRef = useRef<number>(Date.now());
   
   // Update time every second
   useEffect(() => {
@@ -38,90 +42,125 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Simulate conveyor belt moving bottles
+  // Move bottles based on real-time animation
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Move bottles along the conveyor
-      setBottles(prev => {
-        const updated = prev.map(bottle => ({
-          ...bottle,
-          position: bottle.position + 1
-        })).filter(bottle => bottle.position < 6); // Remove bottles that exit the view
+    const updateBottles = (timestamp: number) => {
+      const elapsed = timestamp - lastUpdateTimeRef.current;
+      
+      if (elapsed > 25) { // Update at ~40fps
+        lastUpdateTimeRef.current = timestamp;
         
-        // Randomly add a new bottle at the start
-        if (Math.random() > 0.3) { // 70% chance to add a new bottle
-          const defectTypes: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[] = [];
-          const hasIssue = Math.random() < 0.25; // 25% chance for a bottle to have an issue
+        // Calculate movement based on bottles per second
+        const movementPerSecond = 3; // Full screen traversal in 2 seconds
+        const movementThisFrame = (movementPerSecond * elapsed) / 1000;
+        
+        setBottles(prev => {
+          // Move existing bottles
+          const updated = prev.map(bottle => ({
+            ...bottle,
+            position: bottle.position + movementThisFrame
+          })).filter(bottle => bottle.position < 6); // Remove bottles that exit view
           
-          if (hasIssue) {
-            // Decide how many defects (1 or 2)
-            const defectCount = Math.random() < 0.3 ? 2 : 1; // 30% chance for multiple defects
+          // Randomly add new bottles based on production rate
+          const bottlesPerMs = productionRate.perSecond / 1000;
+          const shouldAddBottle = Math.random() < (bottlesPerMs * elapsed * 1.2); // Slight randomness
+          
+          if (shouldAddBottle) {
+            // Decide if bottle has issues (25% chance)
+            const hasIssue = Math.random() < 0.25;
+            const defectTypes: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[] = [];
             
-            // First defect
-            const issueRandom = Math.random();
-            if (issueRandom < 0.25) {
-              defectTypes.push('label');
-            } else if (issueRandom < 0.5) {
-              defectTypes.push('dent');
-            } else if (issueRandom < 0.75) {
-              defectTypes.push('cap');
-            } else {
-              defectTypes.push('liquid');
-            }
-            
-            // Add a second defect if needed, ensuring it's different from the first
-            if (defectCount > 1) {
-              const availableDefects = ['label', 'dent', 'cap', 'liquid'].filter(
-                d => d !== defectTypes[0]
-              ) as ('label' | 'dent' | 'cap' | 'liquid')[];
+            if (hasIssue) {
+              // Randomly select 1 or 2 defect types
+              const defectCount = Math.random() < 0.3 ? 2 : 1;
               
-              const secondDefect = availableDefects[Math.floor(Math.random() * availableDefects.length)];
-              defectTypes.push(secondDefect);
+              // First defect
+              const issueRandom = Math.random();
+              if (issueRandom < 0.25) {
+                defectTypes.push('label');
+              } else if (issueRandom < 0.5) {
+                defectTypes.push('dent');
+              } else if (issueRandom < 0.75) {
+                defectTypes.push('cap');
+              } else {
+                defectTypes.push('liquid');
+              }
+              
+              // Add second defect if needed
+              if (defectCount > 1) {
+                const availableDefects = ['label', 'dent', 'cap', 'liquid'].filter(
+                  d => d !== defectTypes[0]
+                ) as ('label' | 'dent' | 'cap' | 'liquid')[];
+                
+                const secondDefect = availableDefects[Math.floor(Math.random() * availableDefects.length)];
+                defectTypes.push(secondDefect);
+              }
+            } else {
+              defectTypes.push('none');
             }
-          } else {
-            defectTypes.push('none');
+            
+            // Create fill level (75-100% for normal, 40-85% for liquid issues)
+            const fillLevel = defectTypes.includes('liquid') 
+              ? Math.floor(Math.random() * 45) + 40 
+              : Math.floor(Math.random() * 15) + 85;
+            
+            // Add new bottle at start of conveyor
+            updated.push({
+              id: bottleCount,
+              position: 0,
+              hasIssue: hasIssue,
+              types: defectTypes,
+              fillLevel
+            });
+            
+            setBottleCount(prev => prev + 1);
           }
           
-          // Create fill level (75-100% for normal, 40-85% for liquid issues)
-          const fillLevel = defectTypes.includes('liquid') 
-            ? Math.floor(Math.random() * 45) + 40 
-            : Math.floor(Math.random() * 15) + 85;
-          
-          updated.push({
-            id: bottleCount,
-            position: 0,
-            hasIssue: hasIssue,
-            types: defectTypes,
-            fillLevel
-          });
-          
-          setBottleCount(prev => prev + 1);
-        }
-        
-        return updated;
-      });
-    }, 800); // Move every 800ms
+          return updated;
+        });
+      }
+      
+      animationFrameRef.current = requestAnimationFrame(updateBottles);
+    };
     
-    return () => clearInterval(interval);
-  }, [bottleCount]);
+    animationFrameRef.current = requestAnimationFrame(updateBottles);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [bottleCount, productionRate.perSecond]);
 
   // Effect to handle detection and trigger parent component
   useEffect(() => {
-    const centerBottle = bottles.find(b => b.position === 3);
-    
-    if (centerBottle && centerBottle.id !== lastDetectedBottleId) {
-      // When a bottle reaches the center position, notify parent component
-      if (onDetect) {
-        setLastDetectedBottleId(centerBottle.id);
-        // Pass the bottle's issue types (or ['none'] if no issue)
-        onDetect(centerBottle.hasIssue ? centerBottle.types : ['none']);
-        
-        // Log for debugging
-        if (centerBottle.hasIssue) {
-          console.log(`Bottle issue detected: ${centerBottle.types.join(', ')}`);
+    const detectBottles = () => {
+      const centerBottles = bottles.filter(b => b.position >= 2.8 && b.position <= 3.2);
+      
+      centerBottles.forEach(bottle => {
+        if (bottle.id !== lastDetectedBottleId) {
+          setLastDetectedBottleId(bottle.id);
+          
+          // Notify parent component
+          if (onDetect) {
+            onDetect(bottle.hasIssue ? bottle.types : ['none']);
+            
+            // Log for debugging
+            if (bottle.hasIssue) {
+              console.log(`Bottle issue detected: ${bottle.types.join(', ')}`);
+            }
+          }
         }
+      });
+    };
+    
+    detectionIntervalRef.current = window.setInterval(detectBottles, 200);
+    
+    return () => {
+      if (detectionIntervalRef.current) {
+        clearInterval(detectionIntervalRef.current);
       }
-    }
+    };
   }, [bottles, onDetect, lastDetectedBottleId]);
 
   const formatTime = () => {
@@ -132,7 +171,10 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
     <div className={cn("bg-black rounded-lg overflow-hidden relative", className)}>
       <div className="absolute top-0 left-0 w-full p-2 flex justify-between items-center text-xs text-white bg-black/70 z-10">
         <div className="font-mono">CAM-01</div>
-        <div className="font-mono">{formatTime()}</div>
+        <div className="font-mono flex items-center space-x-3">
+          <span>{productionRate.perMinute.toFixed(1)} un/min</span>
+          <span>{formatTime()}</span>
+        </div>
       </div>
       
       <div className="relative">
@@ -140,8 +182,8 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
         <div className="w-full aspect-video bg-gray-900 relative overflow-hidden">
           {/* Conveyor belt */}
           <div className="absolute bottom-1/4 left-0 right-0 h-8 bg-gray-800 border-t border-b border-gray-700">
-            <div className="grid grid-cols-12 h-full">
-              {Array.from({ length: 12 }).map((_, i) => (
+            <div className="grid grid-cols-24 h-full">
+              {Array.from({ length: 24 }).map((_, i) => (
                 <div key={i} className="border-r border-gray-700 h-full" />
               ))}
             </div>
@@ -152,11 +194,11 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
             {bottles.map((bottle) => (
               <div 
                 key={bottle.id} 
-                className={cn(
-                  "absolute bottom-5 -translate-y-full transition-transform duration-500 ease-linear",
-                  `left-[${(bottle.position * 16) + 2}%]`
-                )}
-                style={{ left: `${(bottle.position * 16) + 2}%` }}
+                className="absolute bottom-5 -translate-y-full transition-all duration-100 ease-linear"
+                style={{ 
+                  left: `${(bottle.position * 16) + 2}%`,
+                  transition: 'none' // Use CSS transform for smoother animation
+                }}
               >
                 <div className="w-12 h-32 relative">
                   {/* Bottle body */}
@@ -181,7 +223,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
                     {/* Liquid fill level */}
                     <div 
                       className={cn(
-                        "absolute bottom-0 left-0 w-full bg-blue-500/50 transition-all duration-300",
+                        "absolute bottom-0 left-0 w-full transition-all duration-300",
                         bottle.types.includes('liquid') ? 'bg-red-500/50' : 'bg-blue-500/50'
                       )}
                       style={{ height: `${bottle.fillLevel || 80}%` }}
@@ -190,7 +232,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
                 </div>
                 
                 {/* Detection highlight */}
-                {bottle.position === 3 && bottle.hasIssue && (
+                {bottle.position >= 2.8 && bottle.position <= 3.2 && bottle.hasIssue && (
                   <div className="absolute inset-0 border-2 border-red-500 animate-pulse-slow flex items-center justify-center z-10">
                     <div className="bg-red-500 text-white text-[7px] px-1 flex flex-col items-center">
                       {bottle.types.includes('label') && <span>RÓTULO</span>}
@@ -212,7 +254,10 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
           {/* Overlay elements - camera metrics */}
           <div className="absolute bottom-0 left-0 w-full p-2 flex justify-between bg-black/70 text-white text-xs z-10">
             <div className="font-mono">Res: 1080p</div>
-            <div className="font-mono">FPS: 60</div>
+            <div className="font-mono flex items-center gap-3">
+              <span>FPS: 60</span>
+              <span className="text-green-400">{productionRate.perHour} un/h</span>
+            </div>
           </div>
           
           {/* Camera grid overlay */}
