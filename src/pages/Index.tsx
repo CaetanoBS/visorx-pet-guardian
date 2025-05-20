@@ -25,7 +25,7 @@ const Index = () => {
   const [defectPatterns, setDefectPatterns] = useState<Record<number, Record<string, number>>>({});
   const [bottlePositionCounter, setBottlePositionCounter] = useState(0);
   
-  // NEW: Track recently detected bottles for post-inspection visualization
+  // Track recently detected bottles for post-inspection visualization
   const [recentDetections, setRecentDetections] = useState<{
     id: number;
     hasIssue: boolean;
@@ -175,7 +175,7 @@ const Index = () => {
         const newDetection = {
           id: bottleId,
           hasIssue,
-          types: hasIssue ? types : ['none']
+          types: hasIssue ? types : ['none'] as ('none' | 'label' | 'dent' | 'cap' | 'liquid')[] // Explicit type cast to fix the error
         };
         
         // Keep only the most recent 20 detections
