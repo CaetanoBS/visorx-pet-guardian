@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import StatusIndicator from './StatusIndicator';
@@ -120,4 +119,3 @@ const InspectionResults: React.FC<InspectionResultsProps> = ({
 };
 
 export default InspectionResults;
-

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -6,7 +5,7 @@ interface CameraFeedProps {
   className?: string;
   simulateDetection?: boolean;
   detectionType?: 'none' | 'label' | 'dent' | 'cap' | 'liquid';
-  onDetect?: (types: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[]) => void;
+  onDetect?: (types: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[], bottleId: number) => void;
 }
 
 interface Bottle {
@@ -130,8 +129,8 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
         // When a bottle reaches the center position, notify parent component
         if (onDetect) {
           setLastDetectedBottleId(centerBottle.id);
-          // Pass the bottle's issue types (or ['none'] if no issue)
-          onDetect(centerBottle.hasIssue ? centerBottle.types : ['none']);
+          // Pass the bottle's issue types (or ['none'] if no issue) AND the bottle ID
+          onDetect(centerBottle.hasIssue ? centerBottle.types : ['none'], centerBottle.id);
           
           // Log for debugging
           if (centerBottle.hasIssue) {
@@ -261,4 +260,3 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
 };
 
 export default CameraFeed;
-

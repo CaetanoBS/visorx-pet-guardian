@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import DeviceVisualization from '@/components/DeviceVisualization';
@@ -7,6 +6,7 @@ import ControlPanel from '@/components/ControlPanel';
 import InspectionResults from '@/components/InspectionResults';
 import StatisticsPanel from '@/components/StatisticsPanel';
 import AIAnalysisReport from '@/components/AIAnalysisReport';
+import PostInspectionLine from '@/components/PostInspectionLine';
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -24,6 +24,13 @@ const Index = () => {
   // Track patterns by bottle position
   const [defectPatterns, setDefectPatterns] = useState<Record<number, Record<string, number>>>({});
   const [bottlePositionCounter, setBottlePositionCounter] = useState(0);
+  
+  // NEW: Track recently detected bottles for post-inspection visualization
+  const [recentDetections, setRecentDetections] = useState<{
+    id: number;
+    hasIssue: boolean;
+    types: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[];
+  }[]>([]);
   
   const handleStatusChange = (newStatus: 'error' | 'success' | 'warning' | 'idle') => {
     setStatus(newStatus);
@@ -113,7 +120,7 @@ const Index = () => {
   };
   
   // New handler for the CameraFeed component detection events
-  const handleBottleDetection = (types: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[]) => {
+  const handleBottleDetection = (types: ('none' | 'label' | 'dent' | 'cap' | 'liquid')[], bottleId: number) => {
     // Only process detections when in auto mode
     if (autoMode) {
       setDetectionTypes(types);
@@ -161,6 +168,20 @@ const Index = () => {
       
       // Record patterns
       recordBottlePosition(types);
+      
+      // Add to recent detections for post-inspection visualization
+      setRecentDetections(prev => {
+        const hasIssue = !types.includes('none');
+        const newDetection = {
+          id: bottleId,
+          hasIssue,
+          types: hasIssue ? types : ['none']
+        };
+        
+        // Keep only the most recent 20 detections
+        const updated = [newDetection, ...prev];
+        return updated.slice(0, 20);
+      });
     }
   };
 
@@ -201,6 +222,14 @@ const Index = () => {
                   </div>
                 </div>
               </div>
+            </div>
+            
+            {/* New Post-Inspection Line visualization */}
+            <div className="mt-6">
+              <PostInspectionLine 
+                bottlesPerMinute={99}
+                recentDetections={recentDetections}
+              />
             </div>
             
             <div className="mt-6">
