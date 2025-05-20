@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import StatusIndicator from './StatusIndicator';
+import { Badge } from './ui/badge';
 
 interface InspectionResultsProps {
   className?: string;
@@ -19,6 +20,10 @@ const InspectionResults: React.FC<InspectionResultsProps> = ({
   // If multiple types are provided, use them, otherwise use the single detectionType
   const types = detectionTypes.length > 0 ? detectionTypes : [detectionType];
   
+  // Production metrics
+  const bottlesPerMinute = 99;
+  const bottlesPerHour = bottlesPerMinute * 60;
+  
   return (
     <div className={cn("bg-industrial-dark rounded-lg p-4 text-white", className)}>
       <div className="flex justify-between items-center mb-4">
@@ -28,6 +33,18 @@ const InspectionResults: React.FC<InspectionResultsProps> = ({
           size="lg"
           blinking={status === 'error'}
         />
+      </div>
+      
+      <div className="flex justify-between items-center mb-3">
+        <div className="text-xs">Taxa de Produção</div>
+        <div className="flex gap-2">
+          <Badge variant="outline" className="bg-industrial-medium font-mono text-xs">
+            {bottlesPerHour} uds/h
+          </Badge>
+          <Badge variant="outline" className="bg-industrial-medium font-mono text-xs">
+            {bottlesPerMinute} uds/min
+          </Badge>
+        </div>
       </div>
       
       <div className="space-y-3">
@@ -103,3 +120,4 @@ const InspectionResults: React.FC<InspectionResultsProps> = ({
 };
 
 export default InspectionResults;
+
